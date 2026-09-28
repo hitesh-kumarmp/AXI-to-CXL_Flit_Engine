@@ -90,8 +90,11 @@ module word_assembler (
         (buf_count <= needed_bytes);
 
     assign out_flit_last =
-        out_valid &&
-        ((flit_offset_reg + emit_bytes) == 9'd256);
+    out_valid &&
+    (
+        (flit_offset_reg + emit_bytes == 9'd256) ||
+        out_last
+    );
 
     assign out_word_index =
         flit_offset_reg[7:4];

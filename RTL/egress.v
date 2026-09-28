@@ -15,14 +15,14 @@ module egress (
     input  [3:0]   in_word_index,
 
     // Transaction header from the higher layer
-    input  [63:0]  header_data,
+    input  [127:0]  header_data,
 
     // CXL output
     output        cxl_valid,
     input         cxl_ready,
     output [127:0] cxl_data,
     output [15:0]  cxl_keep,
-    output [63:0]  cxl_header,
+    output [127:0]  cxl_header,
     output        cxl_header_valid,
     output        cxl_last,
     output        cxl_flit_last,

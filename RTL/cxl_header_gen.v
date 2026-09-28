@@ -11,7 +11,7 @@ module cxl_header_gen (
     input  [15:0] tag,
     input  [63:0] address,
     input         poison,
-    input         bep,
+    input         trp,
     input  [3:0]  ld_id,
     input  [12:0] ckid,
     input  [1:0]  tc,
@@ -35,20 +35,15 @@ module cxl_header_gen (
         header_reg[11:9]  = snp_type;
         header_reg[8]     = mem_opcode[3];
 
-        // Tag
+        // Bytes 2-3
         header_reg[23:16] = tag[7:0];
         header_reg[31:24] = tag[15:8];
 
-        // Address[51:6]
-        header_reg[39:32] = address[51:44];
-        header_reg[47:40] = address[43:36];
-        header_reg[55:48] = address[35:28];
-        header_reg[63:56] = address[27:20];
-        header_reg[71:64] = address[19:12];
-        header_reg[77:72] = address[11:6];
+        // Bytes 4-8 + lower 6 bits of byte 9
+        header_reg[77:32] = address[51:6];
 
         // Byte 9
-        header_reg[78] = bep;
+        header_reg[78] = trp;
         header_reg[79] = poison;
 
         // Byte 10
