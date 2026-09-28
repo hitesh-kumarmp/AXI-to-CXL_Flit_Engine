@@ -74,7 +74,6 @@ module ping_pong_bank_ctrl (
 
     wire in_fire;
     wire out_fire;
-    wire write_done;
     wire read_done;
 
     assign in_ready =
@@ -86,16 +85,16 @@ module ping_pong_bank_ctrl (
         write_bank_reg;
 
     assign in_fire =
-        in_valid && in_ready;
+        in_valid &&
+        in_ready;
 
     assign out_fire =
-        out_valid && out_ready;
-
-    assign write_done =
-        in_fire && in_flit_last;
+        out_valid &&
+        out_ready;
 
     assign read_done =
-        out_fire && out_flit_last;
+        out_fire &&
+        out_flit_last;
 
     assign rd_issue =
         rd_issue_reg;
@@ -140,7 +139,7 @@ module ping_pong_bank_ctrl (
         rd_issue_last_reg = 1'b0;
         rd_issue_flit_last_reg = 1'b0;
 
-        // A read completes and frees its bank.
+        // Free the bank after its final output word.
         if (read_done) begin
 
             if (read_bank_reg == 1'b0)
@@ -151,7 +150,7 @@ module ping_pong_bank_ctrl (
             read_active_next = 1'b0;
         end
 
-        // Capture the incoming flit.
+        // Capture incoming packed words.
         if (in_fire) begin
 
             if (write_bank_reg == 1'b0) begin
@@ -186,7 +185,7 @@ module ping_pong_bank_ctrl (
             end
         end
 
-        // Move the writer to whichever bank is free.
+        // Move writer to a free bank.
         if (write_bank_reg == 1'b0) begin
 
             if ((bank0_state_next != FILL) &&
@@ -195,7 +194,6 @@ module ping_pong_bank_ctrl (
                 write_bank_next = 1'b1;
                 bank1_state_next = FILL;
                 bank1_started_next = 1'b0;
-
             end
 
         end
@@ -207,57 +205,12 @@ module ping_pong_bank_ctrl (
                 write_bank_next = 1'b0;
                 bank0_state_next = FILL;
                 bank0_started_next = 1'b0;
-
             end
-
         end
 
-        // Start reading a completed bank.
-        if (!read_active) begin
+        // Continue current bank.
+        if (read_active) begin
 
-            if (bank0_state == READY &&
-                write_bank_next != 1'b0) begin
-
-                rd_issue_reg = 1'b1;
-                rd_bank_reg = 1'b0;
-                rd_addr_reg = bank0_first_word;
-
-                rd_issue_flit_last_reg =
-                    (bank0_first_word == bank0_last_word);
-
-                rd_issue_last_reg =
-                    (bank0_first_word == bank0_last_word) &&
-                    bank0_burst_last;
-
-                bank0_state_next = READ;
-                read_bank_next = 1'b0;
-                read_active_next = 1'b1;
-
-            end
-            else if (bank1_state == READY &&
-                     write_bank_next != 1'b1) begin
-
-                rd_issue_reg = 1'b1;
-                rd_bank_reg = 1'b1;
-                rd_addr_reg = bank1_first_word;
-
-                rd_issue_flit_last_reg =
-                    (bank1_first_word == bank1_last_word);
-
-                rd_issue_last_reg =
-                    (bank1_first_word == bank1_last_word) &&
-                    bank1_burst_last;
-
-                bank1_state_next = READ;
-                read_bank_next = 1'b1;
-                read_active_next = 1'b1;
-
-            end
-
-        end
-        else begin
-
-            // Keep streaming the current bank.
             if (out_fire && !out_flit_last) begin
 
                 rd_issue_reg = 1'b1;
@@ -286,13 +239,93 @@ module ping_pong_bank_ctrl (
                         ((out_word_index + 4'd1) ==
                          bank1_last_word) &&
                         bank1_burst_last;
+                end
+            end
+
+            // Safe bank handoff only to a bank already READY.
+            else if (out_fire && out_flit_last) begin
+
+                if ((read_bank_reg == 1'b0) &&
+                    (bank1_state == READY)) begin
+
+                    rd_issue_reg = 1'b1;
+                    rd_bank_reg = 1'b1;
+                    rd_addr_reg = bank1_first_word;
+
+                    rd_issue_flit_last_reg =
+                        (bank1_first_word == bank1_last_word);
+
+                    rd_issue_last_reg =
+                        (bank1_first_word == bank1_last_word) &&
+                        bank1_burst_last;
+
+                    bank1_state_next = READ;
+                    read_bank_next = 1'b1;
+                    read_active_next = 1'b1;
 
                 end
+                else if ((read_bank_reg == 1'b1) &&
+                         (bank0_state == READY)) begin
 
+                    rd_issue_reg = 1'b1;
+                    rd_bank_reg = 1'b0;
+                    rd_addr_reg = bank0_first_word;
+
+                    rd_issue_flit_last_reg =
+                        (bank0_first_word == bank0_last_word);
+
+                    rd_issue_last_reg =
+                        (bank0_first_word == bank0_last_word) &&
+                        bank0_burst_last;
+
+                    bank0_state_next = READ;
+                    read_bank_next = 1'b0;
+                    read_active_next = 1'b1;
+                end
             end
 
         end
+        else begin
 
+            // Start a bank that was already READY.
+            if ((bank0_state == READY) &&
+                (write_bank_reg != 1'b0)) begin
+
+                rd_issue_reg = 1'b1;
+                rd_bank_reg = 1'b0;
+                rd_addr_reg = bank0_first_word;
+
+                rd_issue_flit_last_reg =
+                    (bank0_first_word == bank0_last_word);
+
+                rd_issue_last_reg =
+                    (bank0_first_word == bank0_last_word) &&
+                    bank0_burst_last;
+
+                bank0_state_next = READ;
+                read_bank_next = 1'b0;
+                read_active_next = 1'b1;
+
+            end
+            else if ((bank1_state == READY) &&
+                     (write_bank_reg != 1'b1)) begin
+
+                rd_issue_reg = 1'b1;
+                rd_bank_reg = 1'b1;
+                rd_addr_reg = bank1_first_word;
+
+                rd_issue_flit_last_reg =
+                    (bank1_first_word == bank1_last_word);
+
+                rd_issue_last_reg =
+                    (bank1_first_word == bank1_last_word) &&
+                    bank1_burst_last;
+
+                bank1_state_next = READ;
+                read_bank_next = 1'b1;
+                read_active_next = 1'b1;
+            end
+        end
     end
 
     always @(posedge clk or negedge rst_n) begin
@@ -341,9 +374,7 @@ module ping_pong_bank_ctrl (
 
             bank0_burst_last <= bank0_burst_last_next;
             bank1_burst_last <= bank1_burst_last_next;
-
         end
-
     end
 
 endmodule
