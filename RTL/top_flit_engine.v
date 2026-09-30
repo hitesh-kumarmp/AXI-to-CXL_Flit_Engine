@@ -55,6 +55,7 @@ module top_flit_engine #(
     wire [31:0] ingress_burst_bytes;
     wire [7:0] ingress_burst_offset;
 
+    // Packing output
     wire pack_valid;
     wire pack_ready;
     wire [127:0] pack_data;
@@ -64,6 +65,16 @@ module top_flit_engine #(
     wire [3:0] pack_word_index;
     wire [8:0] pack_flit_offset;
 
+    // FIFO output
+    wire fifo_valid;
+    wire fifo_ready;
+    wire [127:0] fifo_data;
+    wire [15:0] fifo_keep;
+    wire fifo_last;
+    wire fifo_flit_last;
+    wire [3:0] fifo_word_index;
+
+    // Storage output
     wire storage_valid;
     wire storage_ready;
     wire [127:0] storage_data;
@@ -148,8 +159,10 @@ module top_flit_engine #(
         .out_flit_offset (pack_flit_offset)
     );
 
-    // Ping-pong BRAM
-    storage u_storage (
+    // 32-word staging FIFO
+    flit_staging_fifo #(
+        .DEPTH(128)
+    ) u_flit_staging_fifo (
         .clk            (clk),
         .rst_n          (rst_n),
 
@@ -160,6 +173,28 @@ module top_flit_engine #(
         .in_last        (pack_last),
         .in_flit_last   (pack_flit_last),
         .in_word_index  (pack_word_index),
+
+        .out_valid      (fifo_valid),
+        .out_ready      (fifo_ready),
+        .out_data       (fifo_data),
+        .out_keep       (fifo_keep),
+        .out_last       (fifo_last),
+        .out_flit_last  (fifo_flit_last),
+        .out_word_index (fifo_word_index)
+    );
+
+    // Ping-pong BRAM storage
+    storage u_storage (
+        .clk            (clk),
+        .rst_n          (rst_n),
+
+        .in_valid       (fifo_valid),
+        .in_ready       (fifo_ready),
+        .in_data        (fifo_data),
+        .in_keep        (fifo_keep),
+        .in_last        (fifo_last),
+        .in_flit_last   (fifo_flit_last),
+        .in_word_index  (fifo_word_index),
 
         .out_valid      (storage_valid),
         .out_ready      (storage_ready),
@@ -195,7 +230,7 @@ module top_flit_engine #(
     // CXL egress
     egress u_egress (
         .clk               (clk),
-        .rst_n             (rst_n),
+        .rst_n              (rst_n),
 
         .in_valid          (storage_valid),
         .in_ready          (storage_ready),
