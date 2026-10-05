@@ -26,9 +26,9 @@ module packing (
 
     wire [4:0] beat_bytes;
 
-    wire [5:0] buf_count;
+    wire [5:0]   buf_count;
     wire [127:0] buf_data;
-    wire [15:0] buf_keep;
+    wire [15:0]  buf_keep;
 
     wire         buf_in_ready;
     wire [4:0]   buf_pop_bytes;
@@ -65,29 +65,29 @@ module packing (
     );
 
     word_assembler u_word_assembler (
-        .clk            (clk),
-        .rst_n          (rst_n),
+        .clk             (clk),
+        .rst_n           (rst_n),
 
-        .in_fire        (in_fire),
-        .in_last        (in_last),
-        .in_burst_start (in_burst_start),
-        .in_burst_offset(in_burst_offset),
+        .in_fire         (in_fire),
+        .in_last         (in_last),
+        .in_burst_start  (in_burst_start),
+        .in_burst_offset (in_burst_offset),
 
-        .buf_count      (buf_count),
-        .buf_data       (buf_data),
-        .buf_keep       (buf_keep),
+        .buf_count       (buf_count),
+        .buf_data        (buf_data),
+        .buf_keep        (buf_keep),
 
-        .allow_input    (allow_input),
-        .pop_bytes      (buf_pop_bytes),
+        .allow_input     (allow_input),
+        .pop_bytes       (buf_pop_bytes),
 
-        .out_valid      (out_valid),
-        .out_ready      (out_ready),
-        .out_data       (out_data),
-        .out_keep       (out_keep),
-        .out_last       (out_last),
-        .out_flit_last  (out_flit_last),
-        .out_word_index (out_word_index),
-        .out_flit_offset(out_flit_offset)
+        .out_valid       (out_valid),
+        .out_ready       (out_ready),
+        .out_data        (out_data),
+        .out_keep        (out_keep),
+        .out_last        (out_last),
+        .out_flit_last   (out_flit_last),
+        .out_word_index  (out_word_index),
+        .out_flit_offset (out_flit_offset)
     );
 
 endmodule

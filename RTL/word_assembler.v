@@ -63,6 +63,7 @@ module word_assembler (
         out_keep_reg = 16'd0;
 
         for (i = 0; i < 16; i = i + 1) begin
+
             if ((i >= current_lane) &&
                 (i < current_lane + emit_bytes)) begin
 
@@ -90,11 +91,11 @@ module word_assembler (
         (buf_count <= needed_bytes);
 
     assign out_flit_last =
-    out_valid &&
-    (
-        (flit_offset_reg + emit_bytes == 9'd256) ||
-        out_last
-    );
+        out_valid &&
+        (
+            (flit_offset_reg + emit_bytes == 9'd256) ||
+            out_last
+        );
 
     assign out_word_index =
         flit_offset_reg[7:4];
@@ -108,32 +109,49 @@ module word_assembler (
         5'd0;
 
     always @(posedge clk or negedge rst_n) begin
+
         if (!rst_n) begin
+
             flit_offset_reg <= 9'd0;
             burst_end_reg   <= 1'b0;
+
         end
         else begin
 
             if (in_fire && in_burst_start) begin
+
                 flit_offset_reg <=
                     {1'b0, in_burst_offset};
 
-                burst_end_reg <= in_last;
+                burst_end_reg <=
+                    in_last;
             end
+
             else if (in_fire && in_last) begin
-                burst_end_reg <= 1'b1;
+
+                burst_end_reg <=
+                    1'b1;
             end
 
             if (out_valid && out_ready) begin
 
                 if (out_last) begin
-                    flit_offset_reg <= 9'd0;
-                    burst_end_reg   <= 1'b0;
+
+                    flit_offset_reg <=
+                        9'd0;
+
+                    burst_end_reg <=
+                        1'b0;
                 end
+
                 else if (out_flit_last) begin
-                    flit_offset_reg <= 9'd0;
+
+                    flit_offset_reg <=
+                        9'd0;
                 end
+
                 else begin
+
                     flit_offset_reg <=
                         flit_offset_reg + emit_bytes;
                 end
