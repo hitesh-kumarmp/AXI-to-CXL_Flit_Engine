@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module flit_staging_fifo #(
-    parameter DEPTH = 32
+    parameter DEPTH = 256
 )(
     input         clk,
     input         rst_n,

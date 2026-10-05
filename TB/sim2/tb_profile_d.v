@@ -287,6 +287,7 @@ module tb_profile_d;
         $display("DATA ERRORS         = %0d", data_errors);
         $display("UNEXPECTED BYTES    = %0d", unexpected_bytes);
         $display("PROTOCOL ERRORS     = %0d", protocol_errors);
+        $display("FIFO DEPTH = %0d", dut.u_flit_staging_fifo.DEPTH);
 
         if (first_error_seen) begin
             $display("");
@@ -296,6 +297,7 @@ module tb_profile_d;
             $display("LANE        = %0d", first_error_lane);
             $display("EXPECTED    = %02h", first_expected);
             $display("ACTUAL      = %02h", first_actual);
+            $display("FIFO DEPTH = %0d", dut.u_flit_staging_fifo.DEPTH);
             $display("======================================");
         end
 
